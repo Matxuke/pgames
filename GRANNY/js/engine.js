@@ -25,9 +25,11 @@ var Game = new function() {
 	// Game Initialization
 	var domerror= this;
 	this.ctx = [];
+	/*this.m_canvas=[];
+	this.m_ctx= [];*/ //pre-rendering canvases
 	this.initialize = function(canvasElementId,sprite_data,callback) {
 		for(var i=0; i< CANVASES;i++){	
-			console.log("canvas"+i);
+			//console.log("canvas"+i);
 			this.canvas = document.getElementById("canvas"+i);
 			this.width = this.canvas.width;
 			this.height= this.canvas.height;
@@ -35,6 +37,11 @@ var Game = new function() {
 			this.ctx[i] = this.canvas.getContext && this.canvas.getContext('2d');
 			this.ctx[i].fillStyle='white';
 			this.ctx[i].clearRect(0, 0, this.width, this.height);
+			
+			/*this.m_canvas[i] = document.createElement("canvas");
+			this.m_canvas[i].width = 320;
+			this.m_canvas[i].height = 480;
+			this.m_ctx[i] = this.m_canvas[i].getContext('2d');*/
 		}
 		if(!this.ctx[0]) { return alert("Please upgrade your browser to play"); 
 		}
@@ -93,10 +100,17 @@ var Game = new function() {
 				boards[i] && boards[i].clear(Game.ctx);
 				boards[i] && boards[i].draw(Game.ctx);
 				boards[i].keeplastvalues();
+				
 				//boards[i][0].draw(Game.ctx);
 				
 				}
 			}
+			
+			// PRE_RENDERING LAYERS+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+			/*for(var i=0;i<CANVASES;i++){
+					Game.ctx[i].drawImage(Game.m_canvas[i], 0, 0);
+				}*/
+			
 			thisLoop = new Date;
     		var fps = 1000 / (thisLoop - lastLoop);
 			loopcount+=fps;
@@ -151,7 +165,7 @@ var SpriteSheet = new function() {
 	};
 	this.clear = function(ctx,sprite,x,y,scale,canvasid) {
 		var s = this.map[sprite];
-		Game.ctx[canvasid].clearRect(x-1,y-1,s.w*scale+1,s.h*scale+1);
+		Game.ctx[canvasid].clearRect(Math.floor(x),Math.floor(y),s.w*scale+1,s.h*scale+1);
 		
 	};
 	
@@ -241,8 +255,8 @@ var GameBoard = function(){
 	
 	// ARE THEY OVERLAPPING?
 	this.overlap = function(o1,o2) {
-		return !((o1.y+o1.h-1<o2.y) || (o1.y>o2.y+o2.h-1) ||
-		(o1.x+o1.w-1<o2.x) || (o1.x>o2.x+o2.w-1));
+		return !((o1.y+o1.ho-1<o2.y) || (o1.y>o2.y+o2.ho-1) ||
+		(o1.x+o1.wo-1<o2.x) || (o1.x>o2.x+o2.wo-1));
 	};
 	
 	//MUST THEY COLLIDE?
@@ -271,6 +285,8 @@ Sprite.prototype.setup = function(sprite,props) { //Extending setup to the sprit
 	this.frame = this.frame || 0;
 	this.w = SpriteSheet.map[sprite].w;
 	this.h = SpriteSheet.map[sprite].h;
+	this.wo=this.w;
+	this.ho=this.h;
 }
 Sprite.prototype.merge = function(props) { //Extending merge to the sprite object
 	if(props) {

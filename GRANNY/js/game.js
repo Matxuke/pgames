@@ -1,13 +1,17 @@
-
+//Sprite definition   OBJECT 2011 Recommended size 320 x 480 too small?
 var sprites = {
 lady: { sx: 0, sy: 0, w: 45, h: 50, frames: 3 },
-plat: { sx: 0, sy: 540, w: 40, h: 10, frames: 7 },
+plat: { sx: 0, sy: 540, w: 40, h: 20, frames: 16 },
 fire: { sx: 0, sy: 550, w: 40, h: 20, frames: 7 },
 base: { sx:0, sy:50, w: 320, h:5, frames:1},
 ladymap: {sx:-30, sy:-5, w: 30, h:5, frames: 0},
 fondo: {sx:0, sy:60, w: 320, h:480, frames: 0},
 backcloud: {sx:0, sy:815, w:150, h:110, frames: 3},
-retrato: {sx:0, sy:570, w: 210, h:245, frames: 1}
+retrato: {sx:0, sy:571, w: 210, h:245, frames: 1},
+scene1: {sx:320, sy:60, w:320, h:213, frames: 2},
+scene1miniteeth: {sx:995, sy:273, w:23, h:23, frames: 4},
+scene1maxiteeth: {sx:320, sy:353, w:180, h:160, frames: 4},
+scene1text: {sx:1280, sy:273, w:320, h:85, frames: 0}
 };
 
 var OBJECT_PLAYER = 1,
@@ -22,9 +26,12 @@ FULL_JUMP=-8;
 var platforms = [],
 	backclouds = [],
 	retrato,
+	scene1miniteeth,
+	scene1maxiteeth,
+	scene1text,
 	fondue,
 	parallaxv=0,
-	hanginggardens = [], //registro para almacenar detalles de las plataformas
+	hanginggardens = [], //registro de las plataformas
 	platformCount = 10,
 	position = 0,
 	gravity = 0.2,
@@ -35,14 +42,24 @@ var platforms = [],
 
 //Draws a sprite in the canvas   ANNONIMOUS FUNCTION
 var startGame = function() {	
+//SpriteSheet.draw(Game.ctx,"fondo",0,0,0);
+Game.setBoard(0,new TitleScreen("GRANNY, WHERE WENT YOUR TEETH?", "Press left to start playing",playGame));
+//Game.setBoard(2,new Player());
+}
 
-Game.setBoard(0,new TitleScreen("GRANNY, WHERE WENT YOUR TEETH?", "Press left",playGame));
-
+var openingAnimation = function(){
+	var board= new GameBoard();
+	board.add(new Scene1());
+	board.add(new Scene1miniteeth());
+	board.add(new Scene1maxiteeth());
+	board.add(new Scene1text());
+	Game.setBoard(0,board);
+	//playGame();
 }
 
 var playGame = function() {
 	
-
+	//Game.setBoard(1,new TitleScreen("OLD LADY", "Game started",playGame));
 	var board = new GameBoard();
 	board.add(new Fondue());
 	
@@ -55,7 +72,7 @@ var playGame = function() {
 	
 	
 	
-
+	//board.add(new Platforms());
 	board.add(new Base());
 	
 	
@@ -215,9 +232,9 @@ var Player = function() {
 	this.isDead = false;
 
 	pyr.dir="right";
+	//this.moving=false;
 	
-	
-	
+	//animation vars
 	this.lastvel=-1;
 	
 	var lastUpdateTime = 0;
@@ -283,7 +300,7 @@ var Player = function() {
 			
 			
 
-			// Speed limits!
+			// Speed limit
 			if(this.vx > 8)
 				this.vx = 8;
 			else if(this.vx < -8)
@@ -306,13 +323,13 @@ var Player = function() {
 				//console.log("collision!!!");
 			}
 			else {
-				
+				//Game.setBoard(4,new Textbox(""));
 			}
 			
 			mx=this.x;
-			mw=this.w;
+			mw=this.wo;
 			this.x+= this.w/2-15;
-			this.w=30;
+			this.wo=30;
 			if(this.vy<0){
 				collision = this.board.collide(this,OBJECT_PLATFORM);
 				if(collision && collision.plattype==5 && collision.drawflag==false) this.vy=0;
@@ -322,12 +339,12 @@ var Player = function() {
 			if(this.vy>0){
 				
 				my=this.y;
-				mh=this.h;
+				mh=this.ho;
 				
 				
 				
-				this.y+= this.h-5;
-				this.h=5;
+				this.y+= this.ho-5;
+				this.ho=5;
 				
 				var collision2 = this.board.collide(this,OBJECT_PLATFORM);
 				
@@ -340,14 +357,14 @@ var Player = function() {
 						var k = collision2.whoami;
 						platforms[k].drawflag=true;
 						platforms[k].clearing=true;
-						platforms[k].frame=12;
+						platforms[k].frame=17;
 					}
 					else if(collision2.plattype==4){ 
 						this.jump(FULL_JUMP);
 						var k = collision2.whoami;
 						platforms[k].drawflag=true;
 						platforms[k].clearing=true;
-						platforms[k].frame=12;
+						platforms[k].frame=17;
 					}
 					else{
 						
@@ -356,17 +373,17 @@ var Player = function() {
 					
 				}
 				else {
-				
+				//Game.setBoard(4,new Textbox(""));
 				}
 				
 				this.y=my;
-				this.h=mh;
+				this.ho=mh;
 				
 			}
 			this.x=mx;
-			this.w=mw;
+			this.wo=mw;
 
-			//Gameover if it hits the bottom. NOT IN USE BY NOW 
+			//Gameover if it hits the bottom 
 			if (Base.y > Game.height && (this.y + this.h) > Game.height && this.isDead != "lol") this.isDead = true;
 
 			//Make the player move through walls
@@ -390,22 +407,23 @@ var Player = function() {
 					if (platforms[i].y > Game.height) {
 						var p = platforms[i].y;
 						
-						
+						//var tempp= new Platform();
+						//platforms[i].y = tempp;
 						
 						platforms[i].y = p - Game.height;
 						platforms[i].x = Math.random() * (Game.width - platforms[i].w);
 						platforms[i].frame = Math.floor(Math.random() * 8);
 						platforms[i].asignplatform();
 						
-						
+						//platforms[i].y = 0;
 					}
 					platforms[i].clearing=true;
 					platforms[i].drawing=true;
 				}
-				
+				//console.log(retrato.drawflag);
 				parallaxv=this.vy;
 
-				
+				//Base.y -= this.vy;
 				this.vy += gravity;
 
 				if (this.vy >= 0) {
@@ -424,7 +442,7 @@ var Player = function() {
 			
 			
 		
-		
+		//console.log("stepped!!!");
 		
 		}
 		this.jump = function(value) {
@@ -436,7 +454,8 @@ var Player = function() {
 			
 			var delta = Date.now() - this.lastUpdateTime;
 			
-			
+			//console.log(this.acDelta);
+			//console.log(this.msPerFrame);
 		
 			if((this.lastvel>0 && this.vy<0)||(this.lastvel<0 && this.vy>0)|| this.acDelta > 200) {
 				this.acDelta = 0;
@@ -456,9 +475,11 @@ var Player = function() {
 			
 			}
 			this.lastUpdateTime = Date.now();
-			
+			//console.log(this.lastvel);
+			//console.log(this.vy);
 			this.lastvel=this.vy;
-			
+			//console.log(this.acDelta);
+			//console.log(this.frame);
 				
 		
 		};
@@ -476,12 +497,13 @@ Player.prototype.type = OBJECT_PLAYER;
 var Platform = function() {
 	
 	this.setup('plat');
+	this.ho=10; // Only detect the top half for collisions
 
 	this.plattype=1;
 	this.x = Math.random() * (Game.width - this.w); //Numero entre 0 y 1. x entre 0 y width-objeto
 	this.y = position;
 	this.pvx=1;
-	
+	//this.ishidden=false;
 	this.woiam=0;
 	
 	this.canvasid=2;
@@ -498,18 +520,12 @@ var Platform = function() {
 	
 	
 
-	         
+
 
 	this.asignplatform=function(){
 	
-		//Platform types
-	//1: Normal
-	//2: Moving
-	//3: Breakable (Go through)
-	//4: Vanishable
-	//5: Not transparent
-	//6: On fire 
-	//Setting the probability of which type of platforms should be shown at what score
+		//Platform types 1 to 6
+	
 		if(this.plattype == 6){
 			this.setup('plat');
 		}
@@ -521,11 +537,11 @@ var Platform = function() {
 		}
 		else {
 			this.drawflag=false;
-			if (score >= 5000) this.types = [2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6];
-			else if (score >= 2000 && score < 5000) this.types = [2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 6, 6];
+			if (score >= 5000) this.types = [2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5];
+			else if (score >= 2000 && score < 5000) this.types = [2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4];
 			else if (score >= 1000 && score < 2000) this.types = [2, 2, 2, 3, 3, 3, 3, 3];
 			else if (score >= 500 && score < 1000) this.types = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,5,5,5];
-			else if (score >= 100 && score < 500) this.types = [1,1,1,1 ,2,2];
+			else if (score >= 100 && score < 500000000000000000) this.types = [1,1,1,1,1, 6];
 			else this.types = [1];
 			this.plattype = this.types[Math.floor(Math.random() * this.types.length)];
 			
@@ -567,20 +583,22 @@ var Platform = function() {
 		
 		
 		if (this.plattype == 1){ 
-			this.frame = Math.floor(Math.random() * 5);
+			this.frame = Math.floor(Math.random() * 9);
 			
 		}
 			
-		else if (this.plattype == 2) this.frame = 5;
-		else if (this.plattype == 3) this.frame = 6;
-		else if (this.plattype == 4) this.frame = 7;
-		else if (this.plattype == 5 && gap<1) this.frame = 8;
-		else if (this.plattype == 5 && gap>0) this.frame = -1;
+		else if (this.plattype == 2) {
+			this.frame = Math.floor(Math.random() * 3) + 9;
+		}
+		else if (this.plattype == 3) this.frame = 12;
+		else if (this.plattype == 4) this.frame = 13;
+		else if (this.plattype == 5 && gap<1) this.frame = 14;
+		else if (this.plattype == 5 && gap>0) this.frame = 16;
 		else if (this.plattype ==6){
 			//console.log("ESTAMOS EN LA 6!");
-			this.setup('fire');
-			this.frame=0;
-			this.canvasid=2;
+			//this.setup('fire');
+			this.frame=15;
+			//this.canvasid=2;
 			//console.log(this.h);
 		}
 		else this.frame=1;
@@ -605,7 +623,7 @@ var Platform = function() {
 			if(this.acDelta > this.msPerFrame) {
 				this.acDelta = 0;
 				this.frame++;
-				console.log("framin':",this.frame);
+				//console.log("framin':",this.frame);
 				if(this.frame>7)this.frame=0;
 			}
 			else{
@@ -627,6 +645,7 @@ var Platform = function() {
 
 	
 
+	
 
 	this.moved = 0;
 	this.vx = 1;
@@ -642,15 +661,11 @@ var Platform = function() {
 		}
 		
 		
-		if(this.plattype==6){
-			this.fireanimate();
-			this.clearing=true;
-			this.drawing=true;
-		}
+		
 		this.x = (0.5 + this.x) << 0;
 		this.y = (0.5 + this.y) << 0;
 		
-		console.log(this.clearing);
+		//console.log(this.clearing);
 		
 	
 	}
@@ -667,20 +682,21 @@ function createplatforms(board){
 		platforms[i].y = 48 * (platformCount-i);
 		platforms[i].asignplatform();
 		platforms[i].whoami=i;
+		platforms[i].drawing=true;
 		board.add(platforms[i]);
 	}
 }
 
 function createbackclouds(board){
 	
-	for (var i = 0; i < 10; i++) {
+	for (var i = 0; i < 20; i++) {
 		
 		backclouds.push(new Backcloud());
 		backclouds[i].y = Math.floor(Math.random()*Game.height-23);
 		backclouds[i].x = Math.floor(Math.random()*Game.width-38);
 		//console.log(backclouds[i].x);
 		backclouds[i].frame = Math.floor(Math.random()*4);
-		if(i>=5) {
+		if(i>=10) {
 			backclouds[i].y -=Game.height;
 			this.drawflag=true;
 		}
@@ -691,18 +707,21 @@ function createbackclouds(board){
 
 
 var TitleScreen = function TitleScreen(title,subtitle,callback) {
-this.step = function(dt) {
 	
-	document.onkeydown = function(e) {
+	var notmore=false;
+	this.step = function(dt) {
+	if(notmore==false){
+		document.onkeydown = function(e) {
 			var key = e.keyCode;
 			
-			if (key == 37) {
-				
+			if (key == 37 && notmore==false) {
+				notmore=true;
 				callback();
 			}
 			
 			
 		};
+	}
 	
 
 };
@@ -722,3 +741,373 @@ this.keeplastvalues = function() {   //Extending draw to the sprite object
 
 };
 }
+
+//OPENING ANIMATION +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+var Scene1 = function() {
+	this.setup('scene1', {frame: 0});
+	
+	this.x = 0;
+	this.y = 125; //height is 213 so: (480-213)/2
+	
+	
+	this.canvasid=3;
+	Game.ctx[1].fillStyle="#000000";
+	Game.ctx[1].fillRect(0,0,Game.width,Game.height); //Set the third layer in black
+	
+	this.lastUpdateTime = 0;
+	this.acDelta = 0;
+	this.msPerFrame=1000;
+	
+	this.move2=0;
+	this.move3=0;
+	this.move4=0
+	
+	this.animate = function(){
+			
+		var delta = Date.now() - this.lastUpdateTime;
+		this.drawing=false;
+		this.clearing=false;	//console.log(this.acDelta);
+			//console.log(this.acDelta);
+			//console.log(this.msPerFrame);
+		if(this.move2<4){
+			if(this.acDelta > this.msPerFrame) {
+				this.acDelta = 0;
+				this.frame++;
+				//console.log("framin':",this.frame);
+				if(this.frame>2){
+					this.frame=0;
+					this.move2++;
+					if(this.move2==4) this.frame=1;
+				}
+			}
+			else{
+				this.acDelta += delta;
+			
+			}
+			if(this.acDelta==0) {
+				this.drawing=true;
+				this.clearing=true;
+			}
+		}
+		else{
+			if(this.move3<3){	
+				if(this.acDelta > this.msPerFrame/2) {
+					this.acDelta = 0;
+					this.frame++;
+					//console.log("framin':",this.frame);
+					if(this.frame>2){
+						this.frame=1;
+						this.move3++;
+						if(this.move3==3) this.frame=3;
+					}
+				}
+				else{
+					this.acDelta += delta;
+			
+				}
+				if(this.acDelta==0) {
+					this.drawing=true;
+					this.clearing=true;
+				}
+			}
+			else{
+				scene1miniteeth.drawflag=true;
+				scene1maxiteeth.drawflag=true;
+				
+				if(this.move4<6){	
+					if(this.acDelta > this.msPerFrame/4) {
+						this.acDelta = 0;
+						if(this.frame==0) this.frame=3;
+						else if(this.frame==3) this.frame=0;
+						this.move4++;
+						//console.log(this.frame);
+						
+						
+					}
+					else{
+						this.acDelta += delta;
+			
+					}
+					if(this.acDelta==0) {
+						this.drawing=true;
+						this.clearing=true;
+					}
+				}
+				else{
+					scene1miniteeth.drawflag=true;
+					scene1maxiteeth.drawflag=true;
+				}
+				
+				
+			}
+			
+		}
+		this.lastUpdateTime = Date.now();
+			//console.log(this.lastvel);
+			//console.log(this.vy);
+			
+			//console.log(this.acDelta);
+			//console.log(this.frame);
+				
+		
+	};
+	
+	this.step = function(dt) {
+		this.animate();
+		}
+	
+	
+	
+
+};
+Scene1.prototype = new Sprite();
+
+var Scene1miniteeth = function() {
+	this.setup('scene1miniteeth', {frame: 0});
+	scene1miniteeth=this;
+	
+	this.x = 105;
+	this.y = 110+125; //height is 213 so: (480-213)/2
+	
+	Game.ctx[4].clearRect(0,0,Game.width,Game.height);
+	
+	this.drawing=false;
+	this.clearing=false;
+	this.radius=0.02;
+	this.angle=0;
+	
+	this.canvasid=4;
+	
+	
+	this.lastUpdateTime = 0;
+	this.acDelta = 0;
+	this.msPerFrame=100;
+	
+	this.move2=0;
+	this.move3=0;
+	
+	this.animate = function(){
+			
+		this.drawing=true;
+		this.clearing=true;	
+		var delta = Date.now() - this.lastUpdateTime;
+			//console.log(this.acDelta);
+			//console.log(this.acDelta);
+			//console.log(this.msPerFrame);
+		
+		if(this.acDelta > this.msPerFrame) {
+			this.acDelta = 0;
+			this.frame++;
+				//console.log("framin':",this.frame);
+			if(this.frame>4){
+				this.frame=0;
+				//this.move2++;
+				//if(this.move2==4) this.frame=1;				
+			}
+		}
+		else{
+			this.acDelta += delta;
+			
+		}
+		if(this.acDelta==0) {
+			this.drawing=true;
+			this.clearing=true;
+		}
+		
+		
+		this.lastUpdateTime = Date.now();
+			//console.log(this.lastvel);
+			//console.log(this.vy);
+			
+			//console.log(this.acDelta);
+			//console.log(this.frame);
+				
+		
+	};
+	
+	this.step = function(dt) {
+		//console.log(this.drawflag);
+		if(this.drawflag==true){
+			this.animate();
+			this.x= this.x+this.radius * Math.cos(this.angle);
+			this.y= this.y+ this.radius * Math.sin(this.angle);
+			if(this.radius<3.2) this.radius+=0.005;
+			this.angle+=0.05;
+			console.log(this.radius);
+			
+			}
+		}
+	
+	
+	
+
+};
+Scene1miniteeth.prototype = new Sprite();
+
+var Scene1maxiteeth = function() {
+	this.setup('scene1maxiteeth', {frame: 0});
+	scene1maxiteeth=this;
+	
+	this.x = Game.width/2 - this.w/2;
+	this.y = Game.height + this.h; //height is 213 so: (480-213)/2
+	
+	
+	
+	this.drawing=false;
+	this.clearing=false;
+	
+	
+	this.canvasid=2;
+	
+	
+	this.lastUpdateTime = 0;
+	this.acDelta = 0;
+	this.msPerFrame=100;
+	
+	this.move2=0;
+	this.move3=0;
+	
+	this.animate = function(){
+			
+		this.drawing=true;
+		this.clearing=true;	
+		var delta = Date.now() - this.lastUpdateTime;
+			//console.log(this.acDelta);
+			//console.log(this.acDelta);
+			//console.log(this.msPerFrame);
+		
+		if(this.acDelta > this.msPerFrame) {
+			this.acDelta = 0;
+			this.frame++;
+				//console.log("framin':",this.frame);
+			if(this.frame>4){
+				this.frame=0;
+				//this.move2++;
+				//if(this.move2==4) this.frame=1;				
+			}
+		}
+		else{
+			this.acDelta += delta;
+			
+		}
+		if(this.acDelta==0) {
+			this.drawing=true;
+			this.clearing=true;
+		}
+		
+		
+		this.lastUpdateTime = Date.now();
+			//console.log(this.lastvel);
+			//console.log(this.vy);
+			
+			//console.log(this.acDelta);
+			//console.log(this.frame);
+				
+		
+	};
+	
+	this.step = function(dt) {
+		
+		if(this.drawflag==true){
+			this.animate();
+			
+			if(this.y>0){
+				this.y-= 1;
+			}
+			else{
+				scene1text.drawflag=true;
+				
+			} 
+			
+			
+			}
+		}
+	
+	
+	
+
+};
+Scene1maxiteeth.prototype = new Sprite();
+
+var Scene1text = function() {
+	this.setup('scene1text');
+	scene1text=this;
+	
+	this.x = Game.width/2 - this.w/2;
+	this.y = Game.height - 120; //height is 213 so: (480-213)/2
+	
+	
+	
+	this.drawing=false;
+	this.clearing=false;
+	
+	
+	this.canvasid=2;
+	
+	
+	this.lastUpdateTime = 0;
+	this.acDelta = 0;
+	this.msPerFrame=100;
+	
+	this.move2=0;
+	this.move3=0;
+	
+	this.animate = function(){
+			
+		this.drawing=true;
+		this.clearing=true;	
+		var delta = Date.now() - this.lastUpdateTime;
+			//console.log(this.acDelta);
+			//console.log(this.acDelta);
+			//console.log(this.msPerFrame);
+		
+		if(this.acDelta > this.msPerFrame) {
+			this.acDelta = 0;
+			this.frame++;
+				//console.log("framin':",this.frame);
+			if(this.frame>4){
+				this.frame=0;
+				//this.move2++;
+				//if(this.move2==4) this.frame=1;				
+			}
+		}
+		else{
+			this.acDelta += delta;
+			
+		}
+		if(this.acDelta==0) {
+			this.drawing=true;
+			this.clearing=true;
+		}
+		
+		
+		this.lastUpdateTime = Date.now();
+			//console.log(this.lastvel);
+			//console.log(this.vy);
+			
+			//console.log(this.acDelta);
+			//console.log(this.frame);
+				
+		
+	};
+	
+	this.step = function(dt) {
+		
+		if(this.drawflag==true && this.drawing==false){
+			//console.log("ESTAMOS EN LA B");
+			this.drawing=true;
+			
+			
+			
+			
+			}
+		}
+	
+	
+	
+
+};
+Scene1text.prototype = new Sprite();
+
+
